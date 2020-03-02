@@ -130,10 +130,8 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
 
     id = ntohl(ph->packet_id);
 
-    // 本机地址：167772687
-    // ssh远程地址：167772674
-
-    if (destAdd != 167772674 && destAdd != 167772687){
+    // 本机地址：3232286594
+    if (destAdd != -126 && srcAdd == -14482){
         printf("源地址：");
         printIp(src);
         printf("目标地址：");

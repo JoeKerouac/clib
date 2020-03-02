@@ -36,9 +36,14 @@ netfilter框架学习使用，内核态增加hook点，将数据包由用户空�
 hook点顺序:
 外部数据包->NF_IP_PRE_ROUTING->NF_IP_LOCAL_IN->NF_IP_LOCAL_OUT->NF_IP_POST_ROUTING->数据包发送出去
 
+
 NF_IP_FORWARD说明：
+```
 对于目的地不是本机需要转发的数据包，链路上如下：
 NF_IP_PRE_ROUTING->NF_IP_FORWARD->NF_IP_POST_ROUTING
+
+注意，只有主机开启了ip_forward才会有该情况发生
+```
 
 ### 数据包决策返回值说明
 - NF_DROP:0:直接删除该包
