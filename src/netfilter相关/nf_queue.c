@@ -36,24 +36,25 @@ nfq_hdr_put(char *buf, int type, uint32_t queue_num)
 }
 
 static void
-nfq_send_verdict(int queue_num, uint32_t id)
+nfq_send_verdict(int queue_num, uint32_t id, uint16_t plen, void *sendData)
 {
     char buf[MNL_SOCKET_BUFFER_SIZE];
     struct nlmsghdr *nlh;
-    struct nlattr *nest;
+    struct nlattr *nest, *data;
 
     nlh = nfq_hdr_put(buf, NFQNL_MSG_VERDICT, queue_num);
     nfq_nlmsg_verdict_put(nlh, id, NF_ACCEPT);
 
     /* example to set the connmark. First, start NFQA_CT section: */
     nest = mnl_attr_nest_start(nlh, NFQA_CT);
-
     /* then, add the connmark attribute: */
     mnl_attr_put_u32(nlh, CTA_MARK, htonl(42));
     /* more conntrack attributes, e.g. CTA_LABELS could be set here */
-
     /* end conntrack section */
     mnl_attr_nest_end(nlh, nest);
+
+    // 放入数据
+    mnl_attr_put(nlh, NFQA_PAYLOAD, plen, sendData);
 
     if (mnl_socket_sendto(nl, nlh, nlh->nlmsg_len) < 0) {
         perror("mnl_socket_send");
@@ -106,7 +107,7 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
     ph = mnl_attr_get_payload(attr[NFQA_PACKET_HDR]);
 
     plen = mnl_attr_get_payload_len(attr[NFQA_PAYLOAD]);
-    char *payload = mnl_attr_get_payload(attr[NFQA_PAYLOAD]);
+    unsigned char *payload = mnl_attr_get_payload(attr[NFQA_PAYLOAD]);
 
     char *src, *dest;
     unsigned int srcAdd, destAdd;
@@ -130,19 +131,29 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
 
     id = ntohl(ph->packet_id);
 
-    // 本机地址：3232286594
-    if (destAdd != -126 && srcAdd == -14482){
+    // 转发到192.168.199.189
+    unsigned int forwarded = 0xc0a8c7bd;
+
+
+
+    if (srcAdd != -67){
+        // 本机地址：3232286594
         printf("源地址：");
         printIp(src);
         printf("目标地址：");
         printIp(dest);
         printf("源地址int类型是：%d\n", srcAdd);
         printf("目标地址int类型是：%d\n", destAdd);
+        // 修改目标地址为主机
+        struct in_addr rcv;
+        inet_aton("192.168.199.189", &rcv);
+        memcpy(payload + 16, &rcv, sizeof(rcv));
         printf("packet received (id=%u hw=0x%04x hook=%u, payload len %u\n",
-          id, ntohs(ph->hw_protocol), ph->hook, plen);
-
+              id, ntohs(ph->hw_protocol), ph->hook, plen);
         printf("\n\n\n");
     }
+
+
 
     /*
      * ip/tcp checksums are not yet valid, e.g. due to GRO/GSO.
@@ -154,7 +165,7 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
     if (skbinfo & NFQA_SKB_CSUMNOTREADY)
         printf(", checksum not ready");
 
-    nfq_send_verdict(ntohs(nfg->res_id), id);
+    nfq_send_verdict(ntohs(nfg->res_id), id, plen, payload);
 
     return MNL_CB_OK;
 }

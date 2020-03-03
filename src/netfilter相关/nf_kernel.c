@@ -42,7 +42,7 @@ int init(void){
     printk(KERN_INFO "init_module JoeKerouac\n");
     nfho.hook = hook_func;
     /* 如果出现未定义可以直接写为0，等价，该常量定义在netfilter_ipv4.h文件中 */
-    nfho.hooknum = 0;
+    nfho.hooknum = 2;
     nfho.pf = PF_INET;
     nfho.priority = NF_IP_PRI_FIRST;
     nf_register_hook(&nfho);
