@@ -1,1 +1,1 @@
-gcc nf_queue.c -lmnl -lnetfilter_queue -onf_queue.c
+gcc nf_userspace_queue.c -l mnl -l netfilter_queue -o nf_userspace_queue.c

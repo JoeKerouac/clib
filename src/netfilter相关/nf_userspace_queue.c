@@ -20,6 +20,13 @@
 
 static struct mnl_socket *nl;
 
+/**
+ * @brief 构建nlmsghdr并放入指定内存
+ * @param buf 指定数据内存指针
+ * @param type 消息类型
+ * @param queue_num 队列号
+ * @return 构建的nlmsghdr指针，该指针指向的数据内存区域就是在buf的内存区域
+ */
 static struct nlmsghdr *
 nfq_hdr_put(char *buf, int type, uint32_t queue_num)
 {
@@ -35,6 +42,13 @@ nfq_hdr_put(char *buf, int type, uint32_t queue_num)
     return nlh;
 }
 
+/**
+ * @brief 发送决策
+ * @param queue_num 队列号
+ * @param id id
+ * @param plen 数据长度
+ * @param sendData ip数据报文，要符合ip报文规范
+ */
 static void
 nfq_send_verdict(int queue_num, uint32_t id, uint16_t plen, void *sendData)
 {
@@ -74,16 +88,18 @@ static void printIp(char *ip){
 }
 
 
-static unsigned int getIp(char *ip){
-    unsigned int ipNum = 0;
-    char start = 4;
-    for(; start > 0; start--){
-        ipNum = ipNum | (*ip << ((start - 1) * 8));
-        ip++;
-    }
-    return ipNum;
+static unsigned int getIp(unsigned char *ip){
+    unsigned int *data;
+    data = (unsigned int *)ip;
+    return ntohl(*data);
 }
 
+/**
+ * @brief 收到内核消息的回调，当内核收到报文然后放入队列后会发出消息，回调到这里
+ * @param nlh 消息头
+ * @param data 回传数据，mnl_cb_run函数传进来的指针，可以用于返回数据等，这里传的是null，不需要回传数据
+ * @return 返回大于等于1表示成功，小于等于-1表示失败，0表示要停止回调
+ */
 static int queue_cb(const struct nlmsghdr *nlh, void *data)
 {
     struct nfqnl_msg_packet_hdr *ph = NULL;
@@ -91,13 +107,20 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
     uint32_t id = 0, skbinfo;
     struct nfgenmsg *nfg;
     uint16_t plen;
+    int queue_num, hook;
+    unsigned char *src, *dest;
+    unsigned int srcAdd, destAdd;
 
+    // 解析参数列表
     if (nfq_nlmsg_parse(nlh, attr) < 0) {
         perror("problems parsing");
         return MNL_CB_ERROR;
     }
 
+    // 获取消息体
     nfg = mnl_nlmsg_get_payload(nlh);
+    // 队列号
+    queue_num = ntohs(nfg->res_id);
 
     if (attr[NFQA_PACKET_HDR] == NULL) {
         fputs("metaheader not set\n", stderr);
@@ -105,12 +128,13 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
     }
 
     ph = mnl_attr_get_payload(attr[NFQA_PACKET_HDR]);
+    // 对应的内核hook点，有可能内核多个hook点都加入到了该队列，这时可以用这个区分
+    hook = ph->hook;
 
+    // ip报文长度
     plen = mnl_attr_get_payload_len(attr[NFQA_PAYLOAD]);
+    // 标准的ip报文
     unsigned char *payload = mnl_attr_get_payload(attr[NFQA_PAYLOAD]);
-
-    char *src, *dest;
-    unsigned int srcAdd, destAdd;
 
     src = payload + 12;
     dest = payload + 16;
@@ -134,9 +158,7 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
     // 转发到192.168.199.189
     unsigned int forwarded = 0xc0a8c7bd;
 
-
-
-    if (srcAdd != -67){
+    if (srcAdd != -1062680643){
         // 本机地址：3232286594
         printf("源地址：");
         printIp(src);
@@ -152,7 +174,6 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
               id, ntohs(ph->hw_protocol), ph->hook, plen);
         printf("\n\n\n");
     }
-
 
 
     /*

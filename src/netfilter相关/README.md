@@ -4,23 +4,23 @@ netfilter框架学习使用，内核态增加hook点，将数据包由用户空�
 
 ## 文件说明
 - nf_queue.c: 用户空间接受队列，内核态决策为`NF_QUEUE`状态的数据包都会到这里处理；
-- nf_kernel.c: 内核空间对数据包；
+- nf_kernel_custom_hook.c: 内核空间对数据包；
 - compile.sh: 编译nf_queue.c文件使用的脚本；
-- Makefile: 编译nf_kernel.c文件需要使用到的Makefile文件，使用`make`命令编译，`make clean`命令清除编译结果；
+- Makefile: 编译nf_kernel_custom_hook.c文件需要使用到的Makefile文件，使用`make`命令编译，`make clean`命令清除编译结果；
 
 ## 编译说明
 - nf_queue.c：该文件编译依赖于mnl和netfilter_queue两个库，安装方法：
   - mnl:使用`yum search libmnl`来查找相关类库，找到结果中带devel的安装包安装；
   - netfilter_queue:同mnl一样，使用`yum search libnetfilter_queue`来查找相关类库，然后找到结果中带devel的安装包安装；
-- nf_kernel.c：如果`/lib/modules/$(shell uname -r)/build/`这个文件找不到，那么手动替换为Linux源码的实际路径，例
+- nf_kernel_custom_hook.c：如果`/lib/modules/$(shell uname -r)/build/`这个文件找不到，那么手动替换为Linux源码的实际路径，例
 如`/usr/src/kernels/3.10.0-1062.9.1.el7.x86_64/`，如果本机没有那么需要安装Linux源码；
 
 
 ## 使用说明
 1、nf_queue.c文件使用compile.sh编译后生成nf_queue可执行文件，执行该文件的时候需要传入参数，参数为队列编号，因为内核部分没有指定队列
 编号，所以队列编号默认是0，传入0即可，命令：`./nf_queue 0`；
-2、使用make命令编译nf_kernel.c后，使用`insmod nf_kernel.ko`安装内核（注意，机器重启后内核会自动卸载），不使用的时候可以
-用`rmmod nf_kernel`命令来卸载内核（注意这里没有后缀）；
+2、使用make命令编译nf_kernel_custom_hook.c后，使用`insmod nf_kernel_custom_hook.ko`安装内核（注意，机器重启后内核会自动卸载），不使用的时候可以
+用`rmmod nf_kernel_custom_hook`命令来卸载内核（注意这里没有后缀）；
 3、注意：一定要先运行用户空间的程序，再安装内核，否则在运行用户空间程序前网络将会断开；
 
 ## 一些常量说明
