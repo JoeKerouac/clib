@@ -1,7 +1,10 @@
-// 默认广播mac地址
-const char broadcast_mac[];
+#ifndef ARP_REQUEST_LIB
+#define ARP_REQUEST_LIB
 
-typedef struct arppacket
+// 默认广播mac地址
+extern char broadcast_mac[];
+
+struct arppacket
 {
         unsigned char dest_mac[6];//接收方MAC
         unsigned char src_mac[6];//发送方MAC
@@ -48,3 +51,5 @@ int create_arp_socket();
  * @param socket_fd create_arp_socket打开的socket
  */
 void close_arp_socket(int socket_fd);
+
+#endif
