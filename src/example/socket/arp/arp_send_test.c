@@ -13,9 +13,9 @@ int main(){
         printf("socket打开失败\n");
         return -1;
     }
-
+    // 发送arp询问
     while(1){
-        if(send_arp(fd, src_mac, src_ip, dest_mac, dest_ip) < 0){
+        if(send_arp(fd, src_mac, src_ip, NULL, dest_ip) < 0){
             printf("send error\n");
         } else {
             printf("send success\n");
