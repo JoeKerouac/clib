@@ -2,15 +2,46 @@
 #include "arp_request_lib.h"
 
 static void print_mac(char *mac) {
-    char i = 0;
-    for(; i < 6; i++){
+    char start = 0;
+    for(; start < 6; start++){
         unsigned char num = *mac;
         mac++;
         printf("0x%x", num);
-        if(i != 5){
+        if(start != 5){
             printf(":");
         }
     }
+}
+
+static void print_ip(char *ip){
+    char start = 0;
+    for(; start < 4; start++){
+      unsigned char num = *ip;
+      printf("%d", num);
+      ip++;
+      if(start != 3){
+        printf(".");
+      }
+    }
+}
+
+static void print_msg(struct arppacket *msg){
+    printf("发送方mac是：");
+    print_mac(msg->ar_sha);
+    printf("\n");
+
+    printf("发送方ip是：");
+    print_ip(msg->ar_sip);
+    printf("\n");
+
+
+    printf("接收方mac是：");
+    print_mac(msg->ar_tha);
+    printf("\n");
+
+    printf("接收方ip是：");
+    print_ip(msg->ar_tip);
+    printf("\n");
 }
 
 int main(){
@@ -30,13 +61,8 @@ int main(){
         if(receive_arp(fd, local_mac, &msg) <= 0){
             printf("rcv error\n");
         } else {
-            printf("接到的发送方mac是：");
-            print_mac(msg.ar_sha);
-            printf("\n");
-            printf("接到的接受方mac是：");
-            print_mac(msg.ar_tha);
-
-            printf("\n\n\n");
+            print_msg(&msg);
+            printf("\n\n");
         }
     }
 
