@@ -115,11 +115,10 @@ int send_arp(int socket_fd, char src_mac[], char src_ip[], char dest_mac[], char
 /**
  * @brief 接受一个发往本地的arp报文
  * @param socket_fd create_arp_socket打开的socket
- * @param local_mac 本地mac地址
  * @param msg arp报文，用于接受arp数据，当返回大于0的时候该地址会被填充数据
  * @return 返回小于等于0表示失败
  */
-int receive_arp(int socket_fd, char *local_mac, struct arppacket *msg) {
+int receive_arp(int socket_fd, struct arppacket *msg) {
     struct sockaddr_ll sl;
     int ret;
     // 地址长度
@@ -131,7 +130,6 @@ int receive_arp(int socket_fd, char *local_mac, struct arppacket *msg) {
     sl.sll_halen = ETHER_ADDR_LEN;
     sl.sll_protocol = htons(ETH_P_ARP);
     sl.sll_ifindex = IFF_BROADCAST;
-    memcpy(sl.sll_addr, local_mac, ETHER_ADDR_LEN);
 
     memset(msg, 0, sizeof(struct arppacket));
     // 接收数据

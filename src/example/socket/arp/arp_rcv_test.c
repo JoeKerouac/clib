@@ -45,7 +45,6 @@ static void print_msg(struct arppacket *msg){
 }
 
 int main(){
-    unsigned char local_mac[] = { 0x08,0x00,0x27,0xf6,0xf5,0x96 };
     struct arppacket msg;
 
     int fd = create_arp_socket();
@@ -58,7 +57,7 @@ int main(){
 
 
     while(1){
-        if(receive_arp(fd, local_mac, &msg) <= 0){
+        if(receive_arp(fd, &msg) <= 0){
             printf("rcv error\n");
         } else {
             print_msg(&msg);

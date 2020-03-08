@@ -34,11 +34,10 @@ int send_arp(int socket_fd, char src_mac[], char src_ip[], char dest_mac[], char
 /**
  * @brief 接受一个发往本地的arp报文
  * @param socket_fd create_arp_socket打开的socket
- * @param local_mac 本地mac地址
  * @param msg arp报文，用于接受arp数据，当返回大于0的时候该地址会被填充数据
  * @return 返回小于等于0表示失败
  */
-int receive_arp(int socket_fd, char *local_mac, struct arppacket *msg);
+int receive_arp(int socket_fd, struct arppacket *msg);
 
 /**
  * @brief 打开arp发送socket
