@@ -135,10 +135,6 @@ int receive_arp(int socket_fd, struct arppacket *msg) {
     // 接收数据
     ret = recvfrom(socket_fd, msg, sizeof(struct arppacket), 0, (struct sockaddr *)&sl, &addr_length);
 
-    if(ret < 0){
-        return ret;
-    }
-
     return ret;
 }
 
