@@ -37,12 +37,12 @@ int create_arp_socket();
  */
 void close_arp_socket(int socket_fd);
 
-char * arl_get_dest_mac(arppacket *data);
+char * arl_get_dest_mac(struct arppacket *data);
 
-char * arl_get_dest_ip(arppacket *data);
+char * arl_get_dest_ip(struct arppacket *data);
 
-char * arl_get_src_mac(arppacket *data);
+char * arl_get_src_mac(struct arppacket *data);
 
-char * arl_get_src_ip(arppacket *data);
+char * arl_get_src_ip(struct arppacket *data);
 
 #endif

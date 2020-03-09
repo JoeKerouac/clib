@@ -171,18 +171,18 @@ struct arppacket
         unsigned char ar_tip[IP_ADD_LEN];//接收方ip
 } __attribute__ ((__packed__));
 
-char * arl_get_dest_mac(arppacket *data){
+char * arl_get_dest_mac(struct arppacket *data){
     return (*data)->ar_tha;
 }
 
-char * arl_get_dest_ip(arppacket *data){
+char * arl_get_dest_ip(struct arppacket *data){
     return (*data)->ar_tip;
 }
 
-char * arl_get_src_mac(arppacket *data){
+char * arl_get_src_mac(struct arppacket *data){
     return (*data)->ar_sha;
 }
 
-char * arl_get_src_ip(arppacket *data){
+char * arl_get_src_ip(struct arppacket *data){
     return (*data)->ar_sip;
 }
