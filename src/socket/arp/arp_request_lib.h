@@ -4,21 +4,7 @@
 // 默认广播mac地址
 extern char broadcast_mac[];
 
-struct arppacket
-{
-        unsigned char dest_mac[6];//接收方MAC
-        unsigned char src_mac[6];//发送方MAC
-        unsigned short type;         //0x0806是ARP帧的类型值
-        unsigned short ar_hrd;//硬件类型 - 以太网类型值0x1
-        unsigned short ar_pro;//上层协议类型 - IP协议(0x0800)
-        unsigned char  ar_hln;//MAC地址长度
-        unsigned char  ar_pln;//IP地址长度
-        unsigned short ar_op;//操作码 - 0x1表示ARP请求包,0x2表示应答包
-        unsigned char  ar_sha[6];//发送方mac
-        unsigned char ar_sip[4];//发送方ip
-        unsigned char ar_tha[6];//接收方mac
-        unsigned char ar_tip[4];//接收方ip
-} __attribute__ ((__packed__));
+struct arppacket;
 
 /**
  * @brief 发送指定arp请求，当接收方mac为空或者为{ 0xff,0xff,0xff,0xff,0xff,0xff }时将会认为是发送arp查询请求
@@ -50,5 +36,13 @@ int create_arp_socket();
  * @param socket_fd create_arp_socket打开的socket
  */
 void close_arp_socket(int socket_fd);
+
+char * arl_get_dest_mac(arppacket *data);
+
+char * arl_get_dest_ip(arppacket *data);
+
+char * arl_get_src_mac(arppacket *data);
+
+char * arl_get_src_ip(arppacket *data);
 
 #endif

@@ -153,3 +153,36 @@ int create_arp_socket() {
 void close_arp_socket(int socket_fd) {
     close(socket_fd);
 }
+
+// arp请求以太网数据
+struct arppacket
+{
+        unsigned char dest_mac[ETH_ALEN];//接收方MAC
+        unsigned char src_mac[ETH_ALEN];//发送方MAC
+        unsigned short type;         //0x0806是ARP帧的类型值
+        unsigned short ar_hrd;//硬件类型 - 以太网类型值0x1
+        unsigned short ar_pro;//上层协议类型 - IP协议(0x0800)
+        unsigned char  ar_hln;//MAC地址长度
+        unsigned char  ar_pln;//IP地址长度
+        unsigned short ar_op;//操作码 - 0x1表示ARP请求包,0x2表示应答包
+        unsigned char  ar_sha[ETH_ALEN];//发送方mac
+        unsigned char ar_sip[IP_ADD_LEN];//发送方ip
+        unsigned char ar_tha[ETH_ALEN];//接收方mac
+        unsigned char ar_tip[IP_ADD_LEN];//接收方ip
+} __attribute__ ((__packed__));
+
+char * arl_get_dest_mac(arppacket *data){
+    return (*data)->ar_tha;
+}
+
+char * arl_get_dest_ip(arppacket *data){
+    return (*data)->ar_tip;
+}
+
+char * arl_get_src_mac(arppacket *data){
+    return (*data)->ar_sha;
+}
+
+char * arl_get_src_ip(arppacket *data){
+    return (*data)->ar_sip;
+}
