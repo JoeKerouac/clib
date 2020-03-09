@@ -169,3 +169,7 @@ char * arl_get_src_mac(struct arppacket *data){
 char * arl_get_src_ip(struct arppacket *data){
     return data->ar_sip;
 }
+
+unsigned int arl_get_arppacket_size(){
+    return sizeof(struct arppacket);
+}

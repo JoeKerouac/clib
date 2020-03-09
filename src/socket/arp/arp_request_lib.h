@@ -45,4 +45,6 @@ char * arl_get_src_mac(struct arppacket *data);
 
 char * arl_get_src_ip(struct arppacket *data);
 
+unsigned int arl_get_arppacket_size();
+
 #endif
