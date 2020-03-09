@@ -172,17 +172,17 @@ struct arppacket
 } __attribute__ ((__packed__));
 
 char * arl_get_dest_mac(struct arppacket *data){
-    return (*data)->ar_tha;
+    return data->ar_tha;
 }
 
 char * arl_get_dest_ip(struct arppacket *data){
-    return (*data)->ar_tip;
+    return data->ar_tip;
 }
 
 char * arl_get_src_mac(struct arppacket *data){
-    return (*data)->ar_sha;
+    return data->ar_sha;
 }
 
 char * arl_get_src_ip(struct arppacket *data){
-    return (*data)->ar_sip;
+    return data->ar_sip;
 }
