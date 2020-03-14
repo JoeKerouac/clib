@@ -17,8 +17,9 @@ void nfuq_register(void (*callback)(struct callback_data *)) ;
  * @param id id
  * @param plen 数据长度
  * @param sendData ip数据报文，要符合ip报文规范
+ * @param verdict 决策结果，0-5
  */
-void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData);
+void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict);
 
 /**
  * @brief 开始启动接受内核消息

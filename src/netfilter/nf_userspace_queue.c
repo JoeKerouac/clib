@@ -186,14 +186,15 @@ nfuq_hdr_put(char *buf, int type, uint32_t queue_num)
  * @param id id
  * @param plen 数据长度
  * @param sendData ip数据报文，要符合ip报文规范
+ * @param verdict 决策结果，0-5
  */
-void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData) {
+void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict) {
     char buf[MNL_SOCKET_BUFFER_SIZE];
     struct nlmsghdr *nlh;
     struct nlattr *nest, *data;
 
     nlh = nfuq_hdr_put(buf, NFQNL_MSG_VERDICT, queue_num);
-    nfq_nlmsg_verdict_put(nlh, id, NF_ACCEPT);
+    nfq_nlmsg_verdict_put(nlh, id, verdict);
 
     /* example to set the connmark. First, start NFQA_CT section: */
     nest = mnl_attr_nest_start(nlh, NFQA_CT);
