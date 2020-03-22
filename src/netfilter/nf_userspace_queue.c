@@ -47,8 +47,9 @@ void nfuq_register(void (*callback)(struct callback_data *)) ;
  * @param id id
  * @param plen 数据长度
  * @param sendData ip数据报文，要符合ip报文规范
+ * @param verdict 决策
  */
-void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData);
+void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict);
 
 /**
  * @brief 开始启动接受内核消息
@@ -268,7 +269,7 @@ static int queue_cb(const struct nlmsghdr *nlh, void *data)
         _callback(&cd);
     } else {
         // 没有回调函数直接发送通过
-        nfuq_send_verdict(queue_num, id, plen, payload);
+        nfuq_send_verdict(queue_num, id, plen, payload, NF_ACCEPT);
     }
 
     return MNL_CB_OK;
