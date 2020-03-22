@@ -22,7 +22,7 @@ void nfuq_register(void (*callback)(struct callback_data *)) ;
 void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict);
 
 /**
- * @brief 开始启动接受内核消息
+ * @brief 开始启动接受内核消息，运行后会阻塞直到程序结束
  * @param queue_num 队列号
  * @return 返回0表示正常退出，返回其他表示异常退出
  */
@@ -40,5 +40,9 @@ unsigned short nfuq_read_data_len(struct callback_data *data);
 int nfuq_read_queue_num(struct callback_data *data);
 int nfuq_read_hook_num(struct callback_data *data);
 unsigned int nfuq_read_id(struct callback_data *data);
+
+struct callback_data malloc_callback_data();
+
+void free_callback_data(struct callback_data *data);
 
 #endif

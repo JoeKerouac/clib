@@ -313,3 +313,11 @@ int nfuq_read_hook_num(struct callback_data *data){
 unsigned int nfuq_read_id(struct callback_data *data){
     return data->id;
 }
+
+struct callback_data * malloc_callback_data(){
+    return (struct callback_data*)malloc(sizeof(struct callback_data));
+}
+
+void free_callback_data(struct callback_data *data){
+    free(data);
+}
