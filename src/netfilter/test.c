@@ -3,7 +3,7 @@
 
 void test_callback(struct callback_data *data){
     printf("收到数据包了，不处理直接发送\n");
-    nfuq_send_verdict(nfuq_read_queue_num(data), nfuq_read_id(data), nfuq_read_data_len(data), nfuq_read_data(data));
+    nfuq_send_verdict(nfuq_read_queue_num(data), nfuq_read_id(data), nfuq_read_data_len(data), nfuq_read_data(data), 1);
 }
 
 
