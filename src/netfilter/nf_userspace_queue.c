@@ -188,8 +188,9 @@ nfuq_hdr_put(char *buf, int type, uint32_t queue_num)
  * @param plen 数据长度
  * @param sendData ip数据报文，要符合ip报文规范
  * @param verdict 决策结果，0-5
+ * @return 返回发送的长度，小于0表示发送失败
  */
-void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict) {
+int nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict) {
     char buf[MNL_SOCKET_BUFFER_SIZE];
     struct nlmsghdr *nlh;
     struct nlattr *nest, *data;
@@ -208,10 +209,7 @@ void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void
     // 放入数据
     mnl_attr_put(nlh, NFQA_PAYLOAD, plen, sendData);
 
-    if (mnl_socket_sendto(nl, nlh, nlh->nlmsg_len) < 0) {
-        perror("mnl_socket_send");
-        exit(EXIT_FAILURE);
-    }
+    return mnl_socket_sendto(nl, nlh, nlh->nlmsg_len);
 }
 
 /**

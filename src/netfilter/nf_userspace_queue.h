@@ -18,8 +18,9 @@ void nfuq_register(void (*callback)(struct callback_data *)) ;
  * @param plen 数据长度
  * @param sendData ip数据报文，要符合ip报文规范
  * @param verdict 决策结果，0-5
+ * @return 返回发送的长度，小于0表示发送失败
  */
-void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict);
+int nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict);
 
 /**
  * @brief 开始启动接受内核消息，运行后会阻塞直到程序结束
