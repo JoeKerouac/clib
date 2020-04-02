@@ -49,7 +49,7 @@ void nfuq_register(void (*callback)(struct callback_data *)) ;
  * @param sendData ip数据报文，要符合ip报文规范
  * @param verdict 决策
  */
-void nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict);
+int nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict);
 
 /**
  * @brief 开始启动接受内核消息
