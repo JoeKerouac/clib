@@ -191,9 +191,17 @@ nfuq_hdr_put(char *buf, int type, uint32_t queue_num)
  * @return 返回发送的长度，小于0表示发送失败
  */
 int nfuq_send_verdict(int queue_num, unsigned int id, unsigned short plen, void *sendData, int verdict) {
-    char buf[MNL_SOCKET_BUFFER_SIZE];
+    // netlink可以发送的最大长度的数据
+    size_t sizeof_buf = 0xffff + (MNL_SOCKET_BUFFER_SIZE/2);
+
+    // 超过可以发送的最大长度
+    if (plen > sizeof_buf) {
+        return -2;
+    }
+
+    char buf[sizeof_buf];
     struct nlmsghdr *nlh;
-    struct nlattr *nest, *data;
+    struct nlattr *nest;
 
     nlh = nfuq_hdr_put(buf, NFQNL_MSG_VERDICT, queue_num);
     nfq_nlmsg_verdict_put(nlh, id, verdict);
