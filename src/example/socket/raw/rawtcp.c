@@ -1,19 +1,13 @@
 //---cat rawtcp.c---
-
 // Run as root or SUID 0, just datagram no data/payload
-
 #include <unistd.h>
-
 #include <stdio.h>
-
 #include <sys/socket.h>
-
 #include <netinet/ip.h>
-
 #include <netinet/tcp.h>
 
-// Packet length
 
+// Packet length
 #define PCKT_LEN 8192
 
  
@@ -103,7 +97,6 @@ struct tcpheader {
 // Simple checksum function, may use others such as Cyclic Redundancy Check, CRC
 
 unsigned short csum(unsigned short *buf, int len)
-
 {
 
         unsigned long sum;
@@ -120,202 +113,140 @@ unsigned short csum(unsigned short *buf, int len)
 
 }
 
- 
-
 int main(int argc, char *argv[])
-
 {
+    int sd;
 
-int sd;
+    // No data, just datagram
+    char buffer[PCKT_LEN];
+    // The size of the headers
+    struct ipheader *ip = (struct ipheader *) buffer;
+    struct tcpheader *tcp = (struct tcpheader *) (buffer + sizeof(struct ipheader));
 
-// No data, just datagram
 
-char buffer[PCKT_LEN];
+    struct sockaddr_in sin, din;
+    int one = 1;
+    const int *val = &one;
 
-// The size of the headers
 
-struct ipheader *ip = (struct ipheader *) buffer;
+    memset(buffer, 0, PCKT_LEN);
 
-struct tcpheader *tcp = (struct tcpheader *) (buffer + sizeof(struct ipheader));
+    if(argc != 5) {
+        printf("- Invalid parameters!!!\n");
+        printf("- Usage: %s <source hostname/IP> <source port> <target hostname/IP> <target port>\n", argv[0]);
+        exit(-1);
+    }
 
-struct sockaddr_in sin, din;
 
-int one = 1;
+    // IPPROTO_TCP允许自定义header，其中checksum字段和totalLength字段无论我们是否指定内核层都会填充，而sourceAddress和packetId如果我们
+    // 指定了内核就不会填充，否则内核仍将会填充
+    sd = socket(PF_INET, SOCK_RAW, IPPROTO_TCP);
 
-const int *val = &one;
+    if(sd < 0) {
+       perror("socket() error");
+       exit(-1);
+    } else {
+        printf("socket()-SOCK_RAW and tcp protocol is OK.\n");
+    }
 
- 
 
-memset(buffer, 0, PCKT_LEN);
 
- 
+    // The source is redundant, may be used later if needed
+    // Address family
+    sin.sin_family = AF_INET;
+    din.sin_family = AF_INET;
 
-if(argc != 5)
+    // Source port, can be any, modify as needed
+    sin.sin_port = htons(atoi(argv[2]));
+    din.sin_port = htons(atoi(argv[4]));
 
-{
+    // Source IP, can be any, modify as needed
+    sin.sin_addr.s_addr = inet_addr(argv[1]);
+    din.sin_addr.s_addr = inet_addr(argv[3]);
 
-printf("- Invalid parameters!!!\n");
+    // IP structure
+    ip->iph_ihl = 5;
+    ip->iph_ver = 4;
+    ip->iph_tos = 16;
+    ip->iph_len = sizeof(struct ipheader) + sizeof(struct tcpheader);
+    ip->iph_ident = htons(54321);
+    ip->iph_offset = 0;
+    ip->iph_ttl = 64;
+    ip->iph_protocol = 6; // TCP
+    ip->iph_chksum = 0; // Done by kernel
 
-printf("- Usage: %s <source hostname/IP> <source port> <target hostname/IP> <target port>\n", argv[0]);
+    // Source IP, modify as needed, spoofed, we accept through command line argument
+    ip->iph_sourceip = inet_addr(argv[1]);
 
-exit(-1);
+    // Destination IP, modify as needed, but here we accept through command line argument
+    ip->iph_destip = inet_addr(argv[3]);
 
-}
 
- 
 
-sd = socket(PF_INET, SOCK_RAW, IPPROTO_TCP);
+    // The TCP structure. The source port, spoofed, we accept through the command line
+    tcp->tcph_srcport = htons(atoi(argv[2]));
 
-if(sd < 0)
+    // The destination port, we accept through command line
+    tcp->tcph_destport = htons(atoi(argv[4]));
+    tcp->tcph_seqnum = htonl(1);
+    tcp->tcph_acknum = 0;
+    tcp->tcph_offset = 5;
+    tcp->tcph_syn = 1;
+    tcp->tcph_ack = 0;
+    tcp->tcph_win = htons(32767);
+    tcp->tcph_chksum = 0; // Done by kernel
+    tcp->tcph_urgptr = 0;
 
-{
+    // IP checksum calculation
+    ip->iph_chksum = csum((unsigned short *) buffer, (sizeof(struct ipheader) + sizeof(struct tcpheader)));
 
-   perror("socket() error");
 
-   exit(-1);
+    // Inform the kernel do not fill up the headers' structure, we fabricated our own
+    if(setsockopt(sd, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0) {
+        perror("setsockopt() error");
+        exit(-1);
+    }
 
-}
+    else
 
-else
+       printf("setsockopt() is OK\n");
 
-printf("socket()-SOCK_RAW and tcp protocol is OK.\n");
 
- 
 
-// The source is redundant, may be used later if needed
+    printf("Using:::::Source IP: %s port: %u, Target IP: %s port: %u.\n", argv[1], atoi(argv[2]), argv[3], atoi(argv[4]));
 
-// Address family
 
-sin.sin_family = AF_INET;
 
-din.sin_family = AF_INET;
+    // sendto() loop, send every 2 second for 50 counts
 
-// Source port, can be any, modify as needed
+    unsigned int count;
 
-sin.sin_port = htons(atoi(argv[2]));
+    for(count = 0; count < 20; count++)
 
-din.sin_port = htons(atoi(argv[4]));
+    {
 
-// Source IP, can be any, modify as needed
+    if(sendto(sd, buffer, ip->iph_len, 0, (struct sockaddr *)&sin, sizeof(sin)) < 0)
 
-sin.sin_addr.s_addr = inet_addr(argv[1]);
+    // Verify
 
-din.sin_addr.s_addr = inet_addr(argv[3]);
+    {
 
-// IP structure
+       perror("sendto() error");
 
-ip->iph_ihl = 5;
+       exit(-1);
 
-ip->iph_ver = 4;
+    }
 
-ip->iph_tos = 16;
+    else
 
-ip->iph_len = sizeof(struct ipheader) + sizeof(struct tcpheader);
+       printf("Count #%u - sendto() is OK\n", count);
 
-ip->iph_ident = htons(54321);
+    sleep(2);
 
-ip->iph_offset = 0;
+    }
 
-ip->iph_ttl = 64;
+    close(sd);
 
-ip->iph_protocol = 6; // TCP
-
-ip->iph_chksum = 0; // Done by kernel
-
- 
-
-// Source IP, modify as needed, spoofed, we accept through command line argument
-
-ip->iph_sourceip = inet_addr(argv[1]);
-
-// Destination IP, modify as needed, but here we accept through command line argument
-
-ip->iph_destip = inet_addr(argv[3]);
-
- 
-
-// The TCP structure. The source port, spoofed, we accept through the command line
-
-tcp->tcph_srcport = htons(atoi(argv[2]));
-
-// The destination port, we accept through command line
-
-tcp->tcph_destport = htons(atoi(argv[4]));
-
-tcp->tcph_seqnum = htonl(1);
-
-tcp->tcph_acknum = 0;
-
-tcp->tcph_offset = 5;
-
-tcp->tcph_syn = 1;
-
-tcp->tcph_ack = 0;
-
-tcp->tcph_win = htons(32767);
-
-tcp->tcph_chksum = 0; // Done by kernel
-
-tcp->tcph_urgptr = 0;
-
-// IP checksum calculation
-
-ip->iph_chksum = csum((unsigned short *) buffer, (sizeof(struct ipheader) + sizeof(struct tcpheader)));
-
- 
-
-// Inform the kernel do not fill up the headers' structure, we fabricated our own
-
-if(setsockopt(sd, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0)
-
-{
-
-    perror("setsockopt() error");
-
-    exit(-1);
-
-}
-
-else
-
-   printf("setsockopt() is OK\n");
-
- 
-
-printf("Using:::::Source IP: %s port: %u, Target IP: %s port: %u.\n", argv[1], atoi(argv[2]), argv[3], atoi(argv[4]));
-
- 
-
-// sendto() loop, send every 2 second for 50 counts
-
-unsigned int count;
-
-for(count = 0; count < 20; count++)
-
-{
-
-if(sendto(sd, buffer, ip->iph_len, 0, (struct sockaddr *)&sin, sizeof(sin)) < 0)
-
-// Verify
-
-{
-
-   perror("sendto() error");
-
-   exit(-1);
-
-}
-
-else
-
-   printf("Count #%u - sendto() is OK\n", count);
-
-sleep(2);
-
-}
-
-close(sd);
-
-return 0;
+    return 0;
 
 }
