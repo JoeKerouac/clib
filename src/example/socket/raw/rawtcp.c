@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
     const int *val = &one;
 
     // 指示内核不要填充ip_header，我们自己填充，raw socket文档：https://man7.org/linux/man-pages/man7/raw.7.html
+    // 注意，设置了这个选项后底层将不会对数据包进行分片，需要我们自己限制数据包大小不能超过MTU，不然发送失败；
     if(setsockopt(sd, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0) {
         perror("setsockopt() error");
         exit(-1);
@@ -123,7 +124,8 @@ int main(int argc, char *argv[]) {
     sin.sin_family = AF_INET;
 
     // Source port, can be any, modify as needed
-    sin.sin_port = htons(atoi(argv[2]));
+    // 对于Linux2.2及以后，这个应该固定设置为0
+    sin.sin_port = 0;
 
     // Source IP, can be any, modify as needed
     sin.sin_addr.s_addr = inet_addr(argv[1]);
