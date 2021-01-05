@@ -6,17 +6,11 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-
 // Packet length
 #define PCKT_LEN 8192
 
 
-
-
-
-
 /* Structure of a TCP header */
-
 struct tcpheader {
 
  unsigned short int tcph_srcport;
@@ -63,8 +57,7 @@ struct tcpheader {
 
 // Simple checksum function, may use others such as Cyclic Redundancy Check, CRC
 
-unsigned short csum(unsigned short *buf, int len)
-{
+unsigned short csum(unsigned short *buf, int len) {
 
         unsigned long sum;
 
@@ -80,8 +73,7 @@ unsigned short csum(unsigned short *buf, int len)
 
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     int sd;
 
     // No data, just datagram
@@ -91,10 +83,7 @@ int main(int argc, char *argv[])
     struct tcpheader *tcp = (struct tcpheader *) (buffer + sizeof(struct iphdr));
 
 
-    struct sockaddr_in sin, din;
-    int one = 1;
-    const int *val = &one;
-
+    struct sockaddr_in sin;
 
     memset(buffer, 0, PCKT_LEN);
 
@@ -105,31 +94,39 @@ int main(int argc, char *argv[])
     }
 
 
-    // IPPROTO_TCP允许自定义header，其中checksum字段和totalLength字段无论我们是否指定内核层都会填充， 而sourceAddress和packetId如果我们
-    // 指定了内核就不会填充，否则内核仍将会填充
+    // IPPROTO_TCP允许自定义header，其中checksum字段和totalLength字段无论我们是否指定内核层都会填充， 而sourceAddress和packetId如果
+    // 我们指定了内核就不会填充，否则内核仍将会填充，注意，IPPROTO_RAW协议虽然会默认允许IP_HDRINCL选项，但是这样的话socket就只能发送数据不
+    // 能接收数据了;
     sd = socket(PF_INET, SOCK_RAW, IPPROTO_TCP);
 
     if(sd < 0) {
        perror("socket() error");
        exit(-1);
-    } else {
-        printf("socket()-SOCK_RAW and tcp protocol is OK.\n");
     }
 
+    printf("socket()-SOCK_RAW and tcp protocol is OK.\n");
+
+    int one = 1;
+    const int *val = &one;
+
+    // 指示内核不要填充ip_header，我们自己填充，raw socket文档：https://man7.org/linux/man-pages/man7/raw.7.html
+    if(setsockopt(sd, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0) {
+        perror("setsockopt() error");
+        exit(-1);
+    } else {
+       printf("setsockopt() is OK\n");
+    }
 
 
     // The source is redundant, may be used later if needed
     // Address family
     sin.sin_family = AF_INET;
-    din.sin_family = AF_INET;
 
     // Source port, can be any, modify as needed
     sin.sin_port = htons(atoi(argv[2]));
-    din.sin_port = htons(atoi(argv[4]));
 
     // Source IP, can be any, modify as needed
     sin.sin_addr.s_addr = inet_addr(argv[1]);
-    din.sin_addr.s_addr = inet_addr(argv[3]);
 
     // IP structure
     // header长度，单位4byte
@@ -165,20 +162,7 @@ int main(int argc, char *argv[])
     tcp->tcph_urgptr = 0;
 
 
-    // Inform the kernel do not fill up the headers' structure, we fabricated our own
-    if(setsockopt(sd, IPPROTO_IP, IP_HDRINCL, val, sizeof(one)) < 0) {
-        perror("setsockopt() error");
-        exit(-1);
-    }
-
-    else
-
-       printf("setsockopt() is OK\n");
-
-
-
     printf("Using:::::Source IP: %s port: %u, Target IP: %s port: %u.\n", argv[1], atoi(argv[2]), argv[3], atoi(argv[4]));
-
 
 
     // sendto() loop, send every 2 second for 50 counts
