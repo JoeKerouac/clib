@@ -10,43 +10,10 @@
 // Packet length
 #define PCKT_LEN 8192
 
- 
 
-// May create separate header file (.h) for all
 
-// headers' structures
 
-// IP header's structure
 
-struct ipheader {
-
- unsigned char      iph_ihl:5, /* Little-endian */
-
-                    iph_ver:4;
-
- unsigned char      iph_tos;
-
- unsigned short int iph_len;
-
- unsigned short int iph_ident;
-
- unsigned char      iph_flags;
-
- unsigned short int iph_offset;
-
- unsigned char      iph_ttl;
-
- unsigned char      iph_protocol;
-
- unsigned short int iph_chksum;
-
- unsigned int       iph_sourceip;
-
- unsigned int       iph_destip;
-
-};
-
- 
 
 /* Structure of a TCP header */
 
@@ -92,7 +59,7 @@ struct tcpheader {
 
 };
 
- 
+
 
 // Simple checksum function, may use others such as Cyclic Redundancy Check, CRC
 
@@ -120,8 +87,8 @@ int main(int argc, char *argv[])
     // No data, just datagram
     char buffer[PCKT_LEN];
     // The size of the headers
-    struct ipheader *ip = (struct ipheader *) buffer;
-    struct tcpheader *tcp = (struct tcpheader *) (buffer + sizeof(struct ipheader));
+    struct iphdr *ip = (struct iphdr *) buffer;
+    struct tcpheader *tcp = (struct tcpheader *) (buffer + sizeof(struct iphdr));
 
 
     struct sockaddr_in sin, din;
@@ -138,7 +105,7 @@ int main(int argc, char *argv[])
     }
 
 
-    // IPPROTO_TCP允许自定义header，其中checksum字段和totalLength字段无论我们是否指定内核层都会填充，而sourceAddress和packetId如果我们
+    // IPPROTO_TCP允许自定义header，其中checksum字段和totalLength字段无论我们是否指定内核层都会填充， 而sourceAddress和packetId如果我们
     // 指定了内核就不会填充，否则内核仍将会填充
     sd = socket(PF_INET, SOCK_RAW, IPPROTO_TCP);
 
@@ -165,23 +132,23 @@ int main(int argc, char *argv[])
     din.sin_addr.s_addr = inet_addr(argv[3]);
 
     // IP structure
-    ip->iph_ihl = 5;
-    ip->iph_ver = 4;
-    ip->iph_tos = 16;
-    ip->iph_len = sizeof(struct ipheader) + sizeof(struct tcpheader);
-    ip->iph_ident = htons(54321);
-    ip->iph_offset = 0;
-    ip->iph_ttl = 64;
-    ip->iph_protocol = 6; // TCP
-    ip->iph_chksum = 0; // Done by kernel
-
-    // Source IP, modify as needed, spoofed, we accept through command line argument
-    ip->iph_sourceip = inet_addr(argv[1]);
-
-    // Destination IP, modify as needed, but here we accept through command line argument
-    ip->iph_destip = inet_addr(argv[3]);
-
-
+    // header长度，单位4byte
+    ip->ihl = 5;
+    // 版本号
+    ip->version = 4;
+    // 服务类型
+    ip->tos = 16;
+    // 片偏移，分片的时候会用
+    ip->frag_off = 0;
+    // 数据包生存时间
+    ip->ttl = 64;
+    // ICMP是1，tcp是6，UDP是17
+    ip->protocol = 6;
+    // 源ip，可以不填充，不填充的话内核层会填充，这里我们选择填充；
+    // inet_addr函数可以将点分十进制ip转换为长证书u_long类型
+    ip->saddr = inet_addr(argv[1]);
+    // 目标IP
+    ip->daddr = inet_addr(argv[3]);
 
     // The TCP structure. The source port, spoofed, we accept through the command line
     tcp->tcph_srcport = htons(atoi(argv[2]));
@@ -196,9 +163,6 @@ int main(int argc, char *argv[])
     tcp->tcph_win = htons(32767);
     tcp->tcph_chksum = 0; // Done by kernel
     tcp->tcph_urgptr = 0;
-
-    // IP checksum calculation
-    ip->iph_chksum = csum((unsigned short *) buffer, (sizeof(struct ipheader) + sizeof(struct tcpheader)));
 
 
     // Inform the kernel do not fill up the headers' structure, we fabricated our own
@@ -221,28 +185,16 @@ int main(int argc, char *argv[])
 
     unsigned int count;
 
-    for(count = 0; count < 20; count++)
-
-    {
-
-    if(sendto(sd, buffer, ip->iph_len, 0, (struct sockaddr *)&sin, sizeof(sin)) < 0)
-
-    // Verify
-
-    {
-
-       perror("sendto() error");
-
-       exit(-1);
-
-    }
-
-    else
-
-       printf("Count #%u - sendto() is OK\n", count);
-
-    sleep(2);
-
+    unsigned int totalLen;
+    totalLen = sizeof(struct iphdr) + sizeof(struct tcphdr) + 0;
+    for(count = 0; count < 20; count++) {
+        if(sendto(sd, buffer, totalLen, 0, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+            perror("sendto() error");
+            exit(-1);
+        } else {
+            printf("Count #%u - sendto() is OK\n", count);
+        }
+        sleep(2);
     }
 
     close(sd);
