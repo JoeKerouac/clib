@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
     // IPPROTO_TCP允许自定义header，其中checksum字段和totalLength字段无论我们是否指定内核层都会填充， 而sourceAddress和packetId如果
     // 我们指定了内核就不会填充，否则内核仍将会填充，注意，IPPROTO_RAW协议虽然会默认允许IP_HDRINCL选项，但是这样的话socket就只能发送数据不
     // 能接收数据了;
+    // IPPROTO_TCP定义在https://elixir.bootlin.com/linux/v4.7/source/include/uapi/linux/in.h中
     sd = socket(PF_INET, SOCK_RAW, IPPROTO_TCP);
 
     if(sd < 0) {
@@ -142,7 +143,8 @@ int main(int argc, char *argv[]) {
     // 数据包生存时间
     ip->ttl = 64;
     // ICMP是1，tcp是6，UDP是17
-    ip->protocol = 6;
+    // 定义在https://elixir.bootlin.com/linux/v4.7/source/include/uapi/linux/in.h中
+    ip->protocol = IPPROTO_TCP;
     // 源ip，可以不填充，不填充的话内核层会填充，这里我们选择填充；
     // inet_addr函数可以将点分十进制ip转换为长证书u_long类型
     ip->saddr = inet_addr(argv[1]);
