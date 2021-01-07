@@ -10,49 +10,6 @@
 #define PCKT_LEN 8192
 
 
-/* Structure of a TCP header */
-struct tcpheader {
-
- unsigned short int tcph_srcport;
-
- unsigned short int tcph_destport;
-
- unsigned int       tcph_seqnum;
-
- unsigned int       tcph_acknum;
-
- unsigned char      tcph_reserved:4, tcph_offset:4;
-
- // unsigned char tcph_flags;
-
-  unsigned int
-
-       tcp_res1:4,      /*little-endian*/
-
-       tcph_hlen:4,     /*length of tcp header in 32-bit words*/
-
-       tcph_fin:1,      /*Finish flag "fin"*/
-
-       tcph_syn:1,       /*Synchronize sequence numbers to start a connection*/
-
-       tcph_rst:1,      /*Reset flag */
-
-       tcph_psh:1,      /*Push, sends data to the application*/
-
-       tcph_ack:1,      /*acknowledge*/
-
-       tcph_urg:1,      /*urgent pointer*/
-
-       tcph_res2:2;
-
- unsigned short int tcph_win;
-
- unsigned short int tcph_chksum;
-
- unsigned short int tcph_urgptr;
-
-};
-
 
 
 // Simple checksum function, may use others such as Cyclic Redundancy Check, CRC
@@ -80,7 +37,7 @@ int main(int argc, char *argv[]) {
     char buffer[PCKT_LEN];
     // The size of the headers
     struct iphdr *ip = (struct iphdr *) buffer;
-    struct tcpheader *tcp = (struct tcpheader *) (buffer + sizeof(struct iphdr));
+    struct tcphdr *tcp = (struct tcphdr *) (buffer + sizeof(struct iphdr));
 
 
     struct sockaddr_in sin;
@@ -150,6 +107,15 @@ int main(int argc, char *argv[]) {
     ip->saddr = inet_addr(argv[1]);
     // 目标IP
     ip->daddr = inet_addr(argv[3]);
+
+    // htons将16位数字转换为16位无符号网络字节序的数字，atoi函数将字符串转换为int类型的数字（具体位数和平台相关）
+    tcp->source = htons(atoi(argv[2]));
+    tcp->dest = htons(atoi(argv[4]));
+    // htonl函数将32位数字转换为32位无符号网络字节序的数字；
+    // 新建连接是序号从1开始，每发送一个数据+1
+    tcp->seq = htonl(1);
+    // ack标志为1时这个才有用，是收到数据的seq+1
+    tcp->ack_seq = 0;
 
     // The TCP structure. The source port, spoofed, we accept through the command line
     tcp->tcph_srcport = htons(atoi(argv[2]));
