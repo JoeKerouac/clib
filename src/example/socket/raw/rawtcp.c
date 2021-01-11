@@ -112,10 +112,16 @@ int main(int argc, char *argv[]) {
     tcp->source = htons(atoi(argv[2]));
     tcp->dest = htons(atoi(argv[4]));
     // htonl函数将32位数字转换为32位无符号网络字节序的数字；
-    // 新建连接是序号从1开始，每发送一个数据+1
+    // 新建连接是序号从1+ISN（Initial Sequence Number）开始，之后每次用上一个数据的seq+上一个数据的长度（tcp body长度，不包含header）
+    // 作为本次的seq，一个syn也会占用一个序号（tcp握手的时候syn包没有任何数据，但是seq也需要+1）
     tcp->seq = htonl(1);
-    // ack标志为1时这个才有用，是收到数据的seq+1
+    // ack标志为1时这个才有用，表示期望对方发来下个数据的seq值，是本次收到数据的seq+收到数据的长度（tcp body长度，不包含header）
     tcp->ack_seq = 0;
+    tcp->syn = 1;
+    // 16bit的滑动窗口大小
+    tcp->window = htons(1024);
+    //
+    tcp->check = 1;
 
     // The TCP structure. The source port, spoofed, we accept through the command line
     tcp->tcph_srcport = htons(atoi(argv[2]));
