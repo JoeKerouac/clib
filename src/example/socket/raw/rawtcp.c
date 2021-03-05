@@ -117,25 +117,14 @@ int main(int argc, char *argv[]) {
     tcp->seq = htonl(1);
     // ack标志为1时这个才有用，表示期望对方发来下个数据的seq值，是本次收到数据的seq+收到数据的长度（tcp body长度，不包含header）
     tcp->ack_seq = 0;
-    tcp->syn = 1;
+    // 数据包类型
+    tcp->rst = 1;
     // 16bit的滑动窗口大小
     tcp->window = htons(1024);
-    //
-    tcp->check = 1;
-
-    // The TCP structure. The source port, spoofed, we accept through the command line
-    tcp->tcph_srcport = htons(atoi(argv[2]));
-
-    // The destination port, we accept through command line
-    tcp->tcph_destport = htons(atoi(argv[4]));
-    tcp->tcph_seqnum = htonl(1);
-    tcp->tcph_acknum = 0;
-    tcp->tcph_offset = 5;
-    tcp->tcph_syn = 1;
-    tcp->tcph_ack = 0;
-    tcp->tcph_win = htons(32767);
-    tcp->tcph_chksum = 0; // Done by kernel
-    tcp->tcph_urgptr = 0;
+    // 校验和，内核会完成
+    tcp->check = 0;
+    // 紧急指针
+    tcp->urg_ptr = 0;
 
 
     printf("Using:::::Source IP: %s port: %u, Target IP: %s port: %u.\n", argv[1], atoi(argv[2]), argv[3], atoi(argv[4]));
